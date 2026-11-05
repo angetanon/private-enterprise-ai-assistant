@@ -1,3 +1,31 @@
 spring:
   application:
     name: private-enterprise-ai-assistant
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+server:
+  port: 8080
+
+app:
+  ollama:
+    base-url: http://localhost:11434
+    model: llama3.2:3b # Modèle spécifique pour le chat, utilisé par l'API Ollama
+    temperature: 0.3
+    timeout: 5m   # l'inférence CPU est lente
+  rag:
+    embedding-model: nomic-embed-text # Modèle spécifique pour l'embedding, utilisé par RAG
+    chunk-size: 500 # Taille des chunks de texte pour l'indexation et la recherche (500 à 800)
+    chunk-overlap: 50 # Chevauchement des chunks de texte pour l'indexation et la recherche (10% du chunk-size)
+    max-results: 3 # Nombre maximum de résultats à retourner pour une requête RAG
+    min-score: 0.5 # Score minimum pour qu'un résultat soit considéré comme pertinent (0.0 à 1.0)
+    numCtx: 4096 # Nombre de tokens de contexte pour le modèle d'embedding (4096 pour nomic-embed-text)
+  pgvector:
+    host: localhost
+    port: 5432
+    database: assistant
+    user: assistant
+    password: assistant
+    #documents-path: ./documents
+    #embedding-model: nomic-embed-text
