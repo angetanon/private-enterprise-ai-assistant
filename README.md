@@ -1,25 +1,25 @@
 # Private Enterprise AI Assistant
 
-Assistant IA prive d'entreprise base sur Spring Boot + LangChain4j + Ollama.
+Private enterprise AI assistant based on Spring Boot + LangChain4j + Ollama.
 
-## Apercu
+## Overview
 
-Ce projet expose une API REST simple pour envoyer un message a un modele LLM local via Ollama.
+This project exposes a simple REST API to send a message to a local LLM via Ollama.
 
 - Endpoint: `POST /api/chat`
-- Port applicatif: `8080`
-- Ollama par defaut: `http://localhost:11434`
-- Modele par defaut: `llama3.2:3b`
+- Application port: `8080`
+- Default Ollama: `http://localhost:11434`
+- Default model: `llama3.2:3b`
 
-## Prerequis
+## Prerequisites
 
 - Java 25
-- Docker Desktop (ou moteur Docker compatible Compose)
-- Connexion internet (au premier telechargement du modele)
+- Docker Desktop (or a Compose-compatible Docker engine)
+- Internet connection (for the first model download)
 
 ## Docker Compose
 
-Le fichier `docker-compose.yml` du projet:
+The project's `docker-compose.yml` file:
 
 ```yaml
 services:
@@ -39,51 +39,54 @@ volumes:
   ollama_data:
 ```
 
-## Demarrage rapide
+## Quick Start
 
-### 1) Demarrer Ollama
+### 1) Start Ollama
 
 ```powershell
 docker compose up -d
 ```
 
-### 2) Telecharger le modele
+### 2) Download the model
 
 ```powershell
 docker exec -it ollama ollama pull llama3.2:3b
 ```
 
-### 3) Lancer l'application Spring Boot
+### 3) Run the Spring Boot application
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-## Tester l'API
+## Testing the API
 
-Depuis un autre terminal:
+From another terminal:
 
 ```powershell
-curl -X POST "http://localhost:8080/api/chat" -H "Content-Type: text/plain" --data "Donne-moi un resume des ventes du trimestre."
+curl -X POST "http://localhost:8080/api/chat" -H "Content-Type: text/plain" --data "Give me a summary of this quarter's sales."
 ```
 
 ## Configuration
 
-Les parametres sont dans `src/main/resources/application.yaml`:
+The settings are in `src/main/resources/application.yaml`:
 
 - `app.ollama.base-url`
 - `app.ollama.model`
 - `app.ollama.temperature`
 - `app.ollama.timeout`
 - `app.ollama.num-ctx`
+
 ## Tests
 
 ```powershell
 .\mvnw.cmd test
 ```
 
-# Base de connaissances (RAG)
-Requetes RAG (Retrieval-Augmented Generation) pour l'assistant d'entreprise. Le projet utilise un modele d'embedding pour indexer et rechercher des documents pertinents.
+# Knowledge Base (RAG)
+
+RAG (Retrieval-Augmented Generation) queries for the enterprise assistant. The project uses an embedding model to index and search relevant documents.
+
 ```sql
-SELECT metadata->>'file_name' AS fichier, count(*) FROM document_embeddings GROUP BY 1;
-``` 
+SELECT metadata->>'file_name' AS file, count(*) FROM document_embeddings GROUP BY 1;
+```
