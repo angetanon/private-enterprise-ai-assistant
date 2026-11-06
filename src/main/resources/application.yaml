@@ -39,3 +39,7 @@ app:
     database: assistant
     user: assistant
     password: assistant
+  memory:
+    cleanup-enabled: true
+    retention-days: 30
+    cleanup-cron: "0 0 3 * * *"
