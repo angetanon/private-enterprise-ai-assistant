@@ -1,6 +1,7 @@
 package com.oriontech.assistant.configuration;
 
 import com.oriontech.assistant.service.EnterpriseAssistantService;
+import com.oriontech.assistant.service.PostgresChatMemoryStore;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -15,7 +16,8 @@ public class AssistantConfig {
     @Bean
     EnterpriseAssistantService enterpriseAssistantService(ChatModel chatModel,
                                                    StreamingChatModel streamingChatModel,
-                                                   ContentRetriever contentRetriever) {
+                                                   ContentRetriever contentRetriever,
+                                                   PostgresChatMemoryStore memoryStore) {
         return AiServices.builder(EnterpriseAssistantService.class)
                 .chatModel(chatModel)
                 .streamingChatModel(streamingChatModel)
@@ -23,6 +25,7 @@ public class AssistantConfig {
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.builder()
                         .id(memoryId)
                         .maxMessages(10)
+                        .chatMemoryStore(memoryStore)
                         .build())
                 .build();
     }

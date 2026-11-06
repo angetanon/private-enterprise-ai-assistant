@@ -88,5 +88,12 @@ The settings are in `src/main/resources/application.yaml`:
 RAG (Retrieval-Augmented Generation) queries for the enterprise assistant. The project uses an embedding model to index and search relevant documents.
 
 ```sql
+-- Count the number of documents by file name
 SELECT metadata->>'file_name' AS file, count(*) FROM document_embeddings GROUP BY 1;
+
+-- Retrieve chat memory details
+SELECT memory_id, jsonb_array_length(messages) AS nb_messages, updated_at FROM chat_memory;
+
+--- Delete chat memory older than 30 days
+DELETE FROM chat_memory WHERE updated_at < now() - interval '30 days'
 ```

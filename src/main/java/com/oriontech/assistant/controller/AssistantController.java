@@ -1,6 +1,7 @@
 package com.oriontech.assistant.controller;
 
 import com.oriontech.assistant.service.EnterpriseAssistantService;
+import com.oriontech.assistant.service.PostgresChatMemoryStore;
 import dev.langchain4j.service.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -9,6 +10,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @RestController
@@ -17,6 +19,7 @@ import java.util.Objects;
 public class AssistantController {
 
     private final EnterpriseAssistantService assistant;
+    private final PostgresChatMemoryStore memoryStore;
 
     public record AssistantAnswer(String answer, List<String> sources) {}
 
@@ -52,5 +55,11 @@ public class AssistantController {
                 .start();
 
         return emitter;
+    }
+
+    @DeleteMapping("/memory")
+    public Map<String, String> clearMemory(@RequestParam String sessionId) {
+        memoryStore.deleteMessages(sessionId);
+        return Map.of("status", "cleared", "sessionId", sessionId);
     }
 }

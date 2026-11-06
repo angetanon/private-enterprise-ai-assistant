@@ -1,31 +1,41 @@
+# Configuration of the server
+server:
+  port: 8080
+
+# Configuration of the Spring Boot application
 spring:
   application:
     name: private-enterprise-ai-assistant
+  datasource:
+    url: jdbc:postgresql://localhost:5432/assistant
+    username: assistant
+    password: assistant
+  sql:
+      init:
+        mode: always
   servlet:
     multipart:
       max-file-size: 20MB
       max-request-size: 20MB
-server:
-  port: 8080
 
+
+# Configuration of LLM and RAG
 app:
   ollama:
     base-url: http://localhost:11434
-    model: llama3.2:3b # Modèle spécifique pour le chat, utilisé par l'API Ollama
+    model: llama3.2:3b # Specific model to use for inference, e.g., llama3.2:3b, llama3.2:7b, etc.
     temperature: 0.3
-    timeout: 5m   # l'inférence CPU est lente
+    timeout: 5m   # CPU inference is slow
   rag:
-    embedding-model: nomic-embed-text # Modèle spécifique pour l'embedding, utilisé par RAG
-    chunk-size: 500 # Taille des chunks de texte pour l'indexation et la recherche (500 à 800)
-    chunk-overlap: 50 # Chevauchement des chunks de texte pour l'indexation et la recherche (10% du chunk-size)
-    max-results: 3 # Nombre maximum de résultats à retourner pour une requête RAG
-    min-score: 0.5 # Score minimum pour qu'un résultat soit considéré comme pertinent (0.0 à 1.0)
-    numCtx: 4096 # Nombre de tokens de contexte pour le modèle d'embedding (4096 pour nomic-embed-text)
+    embedding-model: nomic-embed-text # Specific embedding model to use for RAG, e.g., nomic-embed-text, openai-embedding-ada-002, etc.
+    chunk-size: 500 # Size of text chunks for indexing and searching (500 to 800)
+    chunk-overlap: 50 # Overlap of text chunks for indexing and searching (10% of chunk-size)
+    max-results: 3 # Maximum number of results to return for a RAG query
+    min-score: 0.5 # Minimum score for a result to be considered relevant (0.0 to 1.0)
+    numCtx: 4096 # Number of context tokens for the embedding model (4096 for nomic-embed-text)
   pgvector:
     host: localhost
     port: 5432
     database: assistant
     user: assistant
     password: assistant
-    #documents-path: ./documents
-    #embedding-model: nomic-embed-text

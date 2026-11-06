@@ -1,6 +1,7 @@
 package com.oriontech.assistant.controller;
 
 import com.oriontech.assistant.service.EnterpriseAssistantService;
+import com.oriontech.assistant.service.PostgresChatMemoryStore;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.TokenStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,12 +40,14 @@ class AssistantControllerTest {
 
     public static final String PATH = "/api/assistant";
     private EnterpriseAssistantService assistant;
+    private PostgresChatMemoryStore memoryStore;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         assistant = mock(EnterpriseAssistantService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new AssistantController(assistant)).build();
+        memoryStore = mock(PostgresChatMemoryStore.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new AssistantController(assistant, memoryStore)).build();
     }
 
     @Test

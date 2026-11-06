@@ -1,6 +1,7 @@
 package com.oriontech.assistant.configuration;
 
 import com.oriontech.assistant.service.EnterpriseAssistantService;
+import com.oriontech.assistant.service.PostgresChatMemoryStore;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
@@ -16,7 +17,8 @@ class AssistantConfigTest {
         EnterpriseAssistantService service = new AssistantConfig().enterpriseAssistantService(
                 mock(ChatModel.class),
                 mock(StreamingChatModel.class),
-                mock(ContentRetriever.class));
+                mock(ContentRetriever.class),
+                mock(PostgresChatMemoryStore.class));
 
         assertThat(service).isNotNull();
     }
