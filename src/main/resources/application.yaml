@@ -21,11 +21,18 @@ spring:
 
 # Configuration of LLM and RAG
 app:
-  ollama:
+  ai:
+    provider: ollama # LLM provider to use, e.g., ollama, openai, etc.
+  ollama: # Configuration of the Ollama LLM server
     base-url: http://localhost:11434
     model: llama3.2:3b # Specific model to use for inference, e.g., llama3.2:3b, llama3.2:7b, etc.
     temperature: 0.3
     timeout: 5m   # CPU inference is slow
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: gpt-4o-mini
+    temperature: 0.3
+    timeout: 60s
   rag:
     embedding-model: nomic-embed-text # Specific embedding model to use for RAG, e.g., nomic-embed-text, openai-embedding-ada-002, etc.
     chunk-size: 500 # Size of text chunks for indexing and searching (500 to 800)
@@ -33,6 +40,9 @@ app:
     max-results: 3 # Maximum number of results to return for a RAG query
     min-score: 0.5 # Minimum score for a result to be considered relevant (0.0 to 1.0)
     numCtx: 4096 # Number of context tokens for the embedding model (4096 for nomic-embed-text)
+    table: document_embeddings # Name of the table to store document embeddings in the database
+    dimension: 768 # Number of dimensions for the embedding model (768 for nomic-embed-text)
+    create-table: true # Whether to create the table for document embeddings if it doesn't exist
   pgvector:
     host: localhost
     port: 5432

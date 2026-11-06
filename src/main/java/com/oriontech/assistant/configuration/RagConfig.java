@@ -35,16 +35,19 @@ public class RagConfig {
             @Value("${app.pgvector.port}") int port,
             @Value("${app.pgvector.database}") String database,
             @Value("${app.pgvector.user}") String user,
-            @Value("${app.pgvector.password}") String password) {
+            @Value("${app.pgvector.password}") String password,
+            @Value("${app.rag.table}") String table,
+            @Value("${app.rag.dimension}") int dimension,
+            @Value("${app.rag.create-table}") boolean createTable) {
         return PgVectorEmbeddingStore.builder()
                 .host(host)
                 .port(port)
                 .database(database)
                 .user(user)
                 .password(password)
-                .table("document_embeddings")
-                .dimension(768)          // dimension de nomic-embed-text
-                .createTable(true)
+                .table(table)
+                .dimension(dimension)
+                .createTable(createTable)
                 .build();
     }
 
