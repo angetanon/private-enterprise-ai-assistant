@@ -1,21 +1,18 @@
 package com.oriontech.assistant.service;
 
-import dev.langchain4j.service.*;
+
+import dev.langchain4j.service.MemoryId;
+import dev.langchain4j.service.Result;
+import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.service.UserMessage;
 
 public interface EnterpriseAssistantService {
 
-    @SystemMessage("""
-        Tu es un assistant d'entreprise. Réponds en français, de façon concise.
-        Appuie-toi sur le contexte fourni quand il est pertinent. Si l'information
-        n'y figure pas, dis-le clairement au lieu d'inventer.
-        """)
+    @SystemMessage(fromResource = "prompts/enterprise-assistant.txt")
     Result<String> chat(@MemoryId String sessionId, @UserMessage String message);
 
-    @SystemMessage("""
-        Tu es un assistant d'entreprise. Réponds en français, de façon concise.
-        Appuie-toi sur le contexte fourni quand il est pertinent. Si l'information
-        n'y figure pas, dis-le clairement au lieu d'inventer.
-        """)
+    @SystemMessage(fromResource = "prompts/enterprise-assistant.txt")
     TokenStream stream(@MemoryId String sessionId, @UserMessage String message);
 }
 

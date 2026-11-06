@@ -16,8 +16,9 @@ public class DocumentController {
     private final DocumentIngestionService ingestionService;
 
     @PostMapping(consumes = "multipart/form-data")
-    public Map<String, String> upload(@RequestParam("file") MultipartFile file) throws IOException {
-        ingestionService.ingest(file);
-        return Map.of("status", "indexed", "file", file.getOriginalFilename());
+    public Map<String, Object> upload(@RequestParam("file") MultipartFile file) throws IOException {
+        return Map.of(
+                "file", file.getOriginalFilename(),
+                "indexing", ingestionService.ingest(file));
     }
 }

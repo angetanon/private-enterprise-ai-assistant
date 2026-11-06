@@ -67,6 +67,10 @@
 		</dependency>
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-open-ai</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j-ollama</artifactId>
 		</dependency>
 		<dependency>
@@ -84,7 +88,7 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
