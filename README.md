@@ -47,13 +47,27 @@ volumes:
 docker compose up -d
 ```
 
-### 2) Download the model
+### 2) Download the models
 
 ```powershell
 docker exec -it ollama ollama pull llama3.2:3b
+docker exec -it ollama ollama pull nomic-embed-text
+docker exec -it ollama ollama pull mistral-nemo:12b
+docker exec -it ollama ollama pull bge-m3
 ```
 
-### 3) Run the Spring Boot application
+### 3) Check the models
+
+```powershell
+docker exec -it ollama ollama list
+```
+### Delete a model
+
+```powershell
+docker exec -it ollama ollama rm <model_name>
+```
+
+### 4) Run the Spring Boot application
 
 ```powershell
 .\mvnw.cmd spring-boot:run

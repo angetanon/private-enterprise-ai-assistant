@@ -8,7 +8,7 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 
 public record AiStack(
-        String name,                 // "ollama" ou "openai" (sert dans l'URL)
+        String name,                 // "ollama" ou "mistral" (sert dans l'URL)
         String chatModelName,
         String embeddingModelName,
         ChatModel chatModel,

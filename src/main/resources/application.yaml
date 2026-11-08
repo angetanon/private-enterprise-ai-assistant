@@ -34,16 +34,16 @@ app:
     min-score: 0.7                              # Minimum score for a result to be considered relevant (0.0 to 1.0)
     timeout: 5m                                 # Timeout for the LLM (e.g., 5m for Ollama)
 
-  openai: # Configuration of the OpenAI LLM server
-    enabled: true                               # false = l'application démarre sans clé
-    api-key: ${OPENAI_API_KEY:}                 # API key for OpenAI (set as an environment variable or in the application.yaml)
-    chat-model: gpt-4o-mini
-    embedding-model: text-embedding-3-small     # Specific embedding model to use for OpenAI
-    embedding-dimensions: 1536                  # Number of dimensions for the embedding model (1536 for text-embedding-3-small)
-    embedding-table: embeddings_openai_3_small  # Name of the table to store document embeddings in the database
-    temperature: 0.7                            # Temperature for the LLM (0.0 to 1.0); 0 = deterministic, 1 = random
-    min-score: 0.1                              # Minimum score for a result to be considered relevant (0.0 to 1.0).
-    timeout: 60s                                # Timeout for the LLM (e.g., 60s for OpenAI)
+  mistral: # Configuration of the Mistral LLM server
+    base-url: http://localhost:11434
+    chat-model: mistral-nemo:12b
+    embedding-model: nomic-embed-text           # Specific embedding model to use for Mistral (nomic-embed-text for Mistral)
+    embedding-dimensions: 768                  # Number of dimensions for the embedding model (768 for nomic-embed-text)
+    embedding-table: embeddings_mistral_nomic_embed_text
+    temperature: 0.1                            # Temperature for the LLM (0.0 to 1.0); 0 = deterministic, 1 = random
+    num-ctx: 16384                              # Number of tokens to use for context (16384 for mistral-nemo:12b)
+    min-score: 0.7                              # Minimum score for a result to be considered relevant (0.0 to 1.0)
+    timeout: 5m                                 # Timeout for the LLM (e.g., 5m for Mistral)
 
   # Configuration of the RAG (Retrieval-Augmented Generation) system
   rag:

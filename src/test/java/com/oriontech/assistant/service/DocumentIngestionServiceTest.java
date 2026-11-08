@@ -24,12 +24,12 @@ class DocumentIngestionServiceTest {
     private static final String TEXT = "Politique de congés : 25 jours par an. ".repeat(80);
 
     private InMemoryEmbeddingStore<TextSegment> ollamaStore;
-    private InMemoryEmbeddingStore<TextSegment> openaiStore;
+    private InMemoryEmbeddingStore<TextSegment> mistralStore;
 
     @BeforeEach
     void setUp() {
         ollamaStore = new InMemoryEmbeddingStore<>();
-        openaiStore = new InMemoryEmbeddingStore<>();
+        mistralStore = new InMemoryEmbeddingStore<>();
     }
 
     @Test
@@ -38,9 +38,9 @@ class DocumentIngestionServiceTest {
 
         Map<String, String> report = service.ingest(textFile("conges.txt"));
 
-        assertThat(report).containsEntry("ollama", "indexed").containsEntry("openai", "indexed");
+        assertThat(report).containsEntry("ollama", "indexed").containsEntry("mistral", "indexed");
         assertThat(count(ollamaStore)).isGreaterThan(1);   // découpé en plusieurs morceaux
-        assertThat(count(openaiStore)).isEqualTo(count(ollamaStore));
+        assertThat(count(mistralStore)).isEqualTo(count(ollamaStore));
     }
 
     @Test
@@ -75,19 +75,19 @@ class DocumentIngestionServiceTest {
         Map<String, String> report = service.ingest(textFile("conges.txt"));
 
         assertThat(report.get("ollama")).isEqualTo("indexed");
-        assertThat(report.get("openai")).startsWith("failed").contains("quota exceeded");
+        assertThat(report.get("mistral")).startsWith("failed").contains("quota exceeded");
         assertThat(count(ollamaStore)).isGreaterThan(0);
-        assertThat(count(openaiStore)).isZero();
+        assertThat(count(mistralStore)).isZero();
     }
 
     // ------------------------------------------------------------------ utils
 
-    private DocumentIngestionService serviceWith(EmbeddingModel ollamaModel, EmbeddingModel openaiModel) {
+    private DocumentIngestionService serviceWith(EmbeddingModel ollamaModel, EmbeddingModel mistralModel) {
         AiStack ollama = new AiStack("ollama", "llama3.2:3b", "bge-m3",
                 null, null, ollamaModel, ollamaStore, null);
-        AiStack openai = new AiStack("openai", "gpt-4o-mini", "text-embedding-3-small",
-                null, null, openaiModel, openaiStore, null);
-        DocumentIngestionService service = new DocumentIngestionService(List.of(ollama, openai));
+        AiStack mistral = new AiStack("mistral", "mistral-nemo:12b", "text-embedding-3-small",
+                null, null, mistralModel, mistralStore, null);
+        DocumentIngestionService service = new DocumentIngestionService(List.of(ollama, mistral));
         ReflectionTestUtils.setField(service, "chunkSize", 500);
         ReflectionTestUtils.setField(service, "chunkOverlap", 50);
         return service;

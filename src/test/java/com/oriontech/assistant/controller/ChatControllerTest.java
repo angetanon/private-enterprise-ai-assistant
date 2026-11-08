@@ -39,7 +39,7 @@ class ChatControllerTest {
     EnterpriseAssistantService ollamaAssistant;
 
     @Mock
-    EnterpriseAssistantService openaiAssistant;
+    EnterpriseAssistantService mistralAssistant;
 
     @Mock
     PostgresChatMemoryStore memoryStore;
@@ -50,7 +50,7 @@ class ChatControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new ChatController(List.of(ollamaStack(), openaiStack()), memoryStore);
+        controller = new ChatController(List.of(ollamaStack(), mistralStack()), memoryStore);
         mvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -69,17 +69,17 @@ class ChatControllerTest {
                 .containsEntry("embeddingModel", "bge-m3")
                 .containsEntry("answer", "Bonjour !");
         assertThat(body.get("durationMs")).isInstanceOf(Long.class);
-        verifyNoInteractions(openaiAssistant);
+        verifyNoInteractions(mistralAssistant);
     }
 
     @Test
-    void chat_routesToOpenai() {
+    void chat_routesTomistral() {
         Result<String> result = resultOf("Hello");
-        when(openaiAssistant.chat("s1", "Salut")).thenReturn(result);
+        when(mistralAssistant.chat("s1", "Salut")).thenReturn(result);
 
-        Map<String, Object> body = controller.chat("openai", "s1", "Salut");
+        Map<String, Object> body = controller.chat("mistral", "s1", "Salut");
 
-        assertThat(body).containsEntry("provider", "openai").containsEntry("answer", "Hello");
+        assertThat(body).containsEntry("provider", "mistral").containsEntry("answer", "Hello");
         verifyNoInteractions(ollamaAssistant);
     }
 
@@ -118,27 +118,19 @@ class ChatControllerTest {
 
     @Test
     void chat_unknownProvider_throws404() {
-        assertThatThrownBy(() -> controller.chat("mistral", "s1", "Salut"))
+        assertThatThrownBy(() -> controller.chat("openai", "s1", "Salut"))
                 .isInstanceOfSatisfying(ResponseStatusException.class, e -> {
                     assertThat(e.getStatusCode().value()).isEqualTo(404);
-                    assertThat(e.getReason()).contains("mistral");
+                    assertThat(e.getReason()).contains("openai");
                 });
     }
 
     @Test
-    void chat_openaiDisabled_returns404ForOpenai() {
-        ChatController onlyOllama = new ChatController(List.of(ollamaStack()), memoryStore);
-
-        assertThatThrownBy(() -> onlyOllama.chat("openai", "s1", "Salut"))
-                .isInstanceOf(ResponseStatusException.class);
-    }
-
-    @Test
     void clearMemory_usesProviderPrefixedMemoryId() {
-        Map<String, String> body = controller.clearMemory("openai", "alice");
+        Map<String, String> body = controller.clearMemory("mistral", "alice");
 
-        verify(memoryStore).deleteMessages("openai:alice");
-        assertThat(body).containsEntry("status", "cleared").containsEntry("provider", "openai");
+        verify(memoryStore).deleteMessages("mistral:alice");
+        assertThat(body).containsEntry("status", "cleared").containsEntry("provider", "mistral");
     }
 
     @Test
@@ -172,7 +164,7 @@ class ChatControllerTest {
 
     @Test
     void http_unknownProvider_returns404() throws Exception {
-        mvc.perform(post("/api/mistral/chat")
+        mvc.perform(post("/api/openai/chat")
                         .contentType(MediaType.TEXT_PLAIN)
                         .content("Salut"))
                 .andExpect(status().isNotFound());
@@ -184,8 +176,8 @@ class ChatControllerTest {
         return new AiStack("ollama", "llama3.2:3b", "bge-m3", null, null, null, null, ollamaAssistant);
     }
 
-    private AiStack openaiStack() {
-        return new AiStack("openai", "gpt-4o-mini", "text-embedding-3-small", null, null, null, null, openaiAssistant);
+    private AiStack mistralStack() {
+        return new AiStack("mistral", "mistral-nemo:12b", "text-embedding-3-small", null, null, null, null, mistralAssistant);
     }
 
     @SuppressWarnings("unchecked")

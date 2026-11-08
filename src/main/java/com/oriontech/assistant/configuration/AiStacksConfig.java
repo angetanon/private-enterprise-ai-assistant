@@ -11,9 +11,6 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
-import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
-import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
@@ -21,7 +18,6 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -85,42 +81,42 @@ public class AiStacksConfig {
                 chat, streaming, embedding, table, dimensions, minScore);
     }
 
-    // ---------------------------------------------------------------- OPENAI
-
+    //--------------------------------------------------------------- MISTRAL
     @Bean
-    @ConditionalOnProperty(name = "app.openai.enabled", havingValue = "true")
-    AiStack openaiStack(
-            @Value("${app.openai.api-key}") String apiKey,
-            @Value("${app.openai.chat-model}") String chatModelName,
-            @Value("${app.openai.embedding-model}") String embeddingModelName,
-            @Value("${app.openai.embedding-dimensions}") int dimensions,
-            @Value("${app.openai.embedding-table}") String table,
-            @Value("${app.openai.temperature}") Double temperature,
-            @Value("${app.openai.min-score}") double minScore,
-            @Value("${app.openai.timeout}") Duration timeout) {
+    AiStack mistralStack(
+            @Value("${app.mistral.base-url}") String baseUrl,
+            @Value("${app.mistral.chat-model}") String chatModelName,
+            @Value("${app.mistral.embedding-model}") String embeddingModelName,
+            @Value("${app.mistral.embedding-dimensions}") int dimensions,
+            @Value("${app.mistral.embedding-table}") String table,
+            @Value("${app.mistral.temperature}") Double temperature,
+            @Value("${app.mistral.num-ctx}") Integer numCtx,
+            @Value("${app.mistral.min-score}") double minScore,
+            @Value("${app.mistral.timeout}") Duration timeout) {
 
-        ChatModel chat = OpenAiChatModel.builder()
-                .apiKey(apiKey)
+        ChatModel chat = OllamaChatModel.builder()
+                .baseUrl(baseUrl)
                 .modelName(chatModelName)
                 .temperature(temperature)
+                .numCtx(numCtx)
                 .timeout(timeout)
                 .build();
 
-        StreamingChatModel streaming = OpenAiStreamingChatModel.builder()
-                .apiKey(apiKey)
+        StreamingChatModel streaming = OllamaStreamingChatModel.builder()
+                .baseUrl(baseUrl)
                 .modelName(chatModelName)
                 .temperature(temperature)
+                .numCtx(numCtx)
                 .timeout(timeout)
                 .build();
 
-        EmbeddingModel embedding = OpenAiEmbeddingModel.builder()
-                .apiKey(apiKey)
+        EmbeddingModel embedding = OllamaEmbeddingModel.builder()
+                .baseUrl(baseUrl)
                 .modelName(embeddingModelName)
-                .dimensions(dimensions)
                 .timeout(timeout)
                 .build();
 
-        return assemble("openai", chatModelName, embeddingModelName,
+        return assemble("mistral", chatModelName, embeddingModelName,
                 chat, streaming, embedding, table, dimensions, minScore);
     }
 
