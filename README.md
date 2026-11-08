@@ -47,13 +47,27 @@ volumes:
 docker compose up -d
 ```
 
-### 2) Download the model
+### 2) Download the models
 
 ```powershell
 docker exec -it ollama ollama pull llama3.2:3b
+docker exec -it ollama ollama pull nomic-embed-text
+docker exec -it ollama ollama pull mistral-nemo:12b
+docker exec -it ollama ollama pull bge-m3
 ```
 
-### 3) Run the Spring Boot application
+### 3) Check the models
+
+```powershell
+docker exec -it ollama ollama list
+```
+### Delete a model
+
+```powershell
+docker exec -it ollama ollama rm <model_name>
+```
+
+### 4) Run the Spring Boot application
 
 ```powershell
 .\mvnw.cmd spring-boot:run
@@ -97,3 +111,64 @@ SELECT memory_id, jsonb_array_length(messages) AS nb_messages, updated_at FROM c
 --- Delete chat memory older than 30 days
 DELETE FROM chat_memory WHERE updated_at < now() - interval '30 days'
 ```
+
+# Project structure
+
+```
+private-enterprise-ai-assistant/
+├── src/main/java/com/oriontech/assistant/
+│   ├── PrivateEnterpriseAiAssistantApplication.java   (@SpringBootApplication, @EnableScheduling)
+│   │
+│   ├── assistant/                     ← Conversations
+│   │   └── ChatController.java   (/api/{provider}/chat, /chat/stream, /memory)
+│   │
+│   ├── knowledge/                     ← Documents
+│   │   └── DocumentController.java    (POST /api/documents)
+│   │
+│   ├── memory/                     
+│   │   ├── PostgresChatMemoryStore.java   (/api/{provider}/chat, /chat/stream, /memory)
+│   │   └── ChatMemoryCleanupTask.java
+│   │
+│   ├── rag/                           ← Indexation and retrieval
+│   │   └── DocumentIngestionService.java
+│   │
+│   ├── runtime/                       ← AI Runtime (Ollama)
+│   │   ├── AiStack.java               (record : models, store, assistant)
+│   │   ├── AiStacksConfig.java        (one stack per models : llama, mistral)
+│   │   └── EnterpriseAssistant.java   (interface AiServices : chat + stream)
+│   │
+│   ├── identity/
+│   │   └── package-info.java          (empty for now)
+│   ├── agent/
+│   │   └── package-info.java
+│   └── governance/
+│       └── package-info.java
+│
+├── src/main/resources/
+│   ├── application.yml
+│   ├── prompts/
+│   │   └── enterprise-assistant.txt   (strict system prompt)
+│   └── db/migration/
+│       ├── V1__extensions.sql
+│       ├── V2__chat_memory.sql
+│       └── V3__embeddings_bge_m3.sql
+│
+└── DocumentIngestionServiceTest.java
+└── src/test/java/com/oriontech/assistant/
+│   ├──  assistant/
+│   │   ├── ChatControllerTest.java
+│   ├──  memory/
+│   │   ├── PostgresChatMemoryStoreTest.java
+│   │   ├── ChatMemoryCleanupTaskTest.java
+│   │   └── ChatMemoryCleanupTaskConditionTest.java
+│   └── rag/
+│       └── DocumentIngestionServiceTest.java
+├── pom.xml
+├── docker-compose.yml                 (ollama, pgvector)
+├── .gitignore
+└── README.md
+
+```
+
+#Swagger UI
+localhost:8080/swagger-ui/index.html
