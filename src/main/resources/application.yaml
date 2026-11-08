@@ -10,9 +10,11 @@ spring:
     url: jdbc:postgresql://localhost:5432/assistant
     username: assistant
     password: assistant
-  sql:
-      init:
-        mode: always
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
   servlet:
     multipart:
       max-file-size: 20MB
@@ -31,25 +33,25 @@ app:
     embedding-table: embeddings_ollama_bge_m3
     temperature: 0.1                            # Temperature for the LLM (0.0 to 1.0); 0 = deterministic, 1 = random
     num-ctx: 4096                               # Number of tokens to use for context (4096 for llama3.2:3b)
-    min-score: 0.7                              # Minimum score for a result to be considered relevant (0.0 to 1.0)
+    min-score: 0.5                              # Minimum score for a result to be considered relevant (0.0 to 1.0)
     timeout: 5m                                 # Timeout for the LLM (e.g., 5m for Ollama)
 
   mistral: # Configuration of the Mistral LLM server
     base-url: http://localhost:11434
     chat-model: mistral-nemo:12b
-    embedding-model: nomic-embed-text           # Specific embedding model to use for Mistral (nomic-embed-text for Mistral)
-    embedding-dimensions: 768                  # Number of dimensions for the embedding model (768 for nomic-embed-text)
-    embedding-table: embeddings_mistral_nomic_embed_text
+    embedding-model: bge-m3           # Specific embedding model to use for Mistral (bge-m3 for Mistral)
+    embedding-dimensions: 1024                  # Number of dimensions for the embedding model (1024 for bge-m3)
+    embedding-table: embeddings_mistral_bge_m3
     temperature: 0.1                            # Temperature for the LLM (0.0 to 1.0); 0 = deterministic, 1 = random
-    num-ctx: 16384                              # Number of tokens to use for context (16384 for mistral-nemo:12b)
-    min-score: 0.7                              # Minimum score for a result to be considered relevant (0.0 to 1.0)
+    num-ctx: 8192                              # Number of tokens to use for context (8192 for mistral-nemo:12b)
+    min-score: 0.5                              # Minimum score for a result to be considered relevant (0.0 to 1.0)
     timeout: 5m                                 # Timeout for the LLM (e.g., 5m for Mistral)
 
   # Configuration of the RAG (Retrieval-Augmented Generation) system
   rag:
     chunk-size: 500                              # Size of text chunks for indexing and searching (500 to 800)
     chunk-overlap: 50                            # Overlap of text chunks for indexing and searching (10% of chunk-size)
-    max-results: 3                               # Maximum number of results to return for a RAG query
+    max-results: 6                               # Maximum number of results to return for a RAG query
 
   # Configuration of the PostgreSQL database for RAG
   pgvector:

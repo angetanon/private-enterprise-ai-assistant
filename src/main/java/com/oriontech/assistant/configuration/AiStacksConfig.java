@@ -140,7 +140,7 @@ public class AiStacksConfig {
                 .password(pgPassword)
                 .table(table)
                 .dimension(dimensions)
-                .createTable(true)
+                .createTable(false)      // Flyway est désormais le seul à créer le schéma
                 .build();
 
         ContentRetriever retriever = EmbeddingStoreContentRetriever.builder()

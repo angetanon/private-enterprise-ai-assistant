@@ -7,6 +7,8 @@ import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +24,8 @@ import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metad
 @Service
 @RequiredArgsConstructor
 public class DocumentIngestionService {
+
+    private final static Logger log = LoggerFactory.getLogger(DocumentIngestionService.class);
 
     private final List<AiStack> stacks;
     private final DocumentParser parser = new ApacheTikaDocumentParser();
@@ -56,6 +60,8 @@ public class DocumentIngestionService {
                 report.put(stack.name(), "failed: " + e.getMessage());
             }
         }
+
+        log.info("Uploaded file: {} , indexing report: {}", fileName, report);
         return report;
     }
 }
