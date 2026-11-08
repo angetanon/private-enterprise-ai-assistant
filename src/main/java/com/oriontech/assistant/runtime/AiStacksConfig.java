@@ -1,8 +1,5 @@
-package com.oriontech.assistant.configuration;
+package com.oriontech.assistant.runtime;
 
-import com.oriontech.assistant.ai.AiStack;
-import com.oriontech.assistant.memory.PostgresChatMemoryStore;
-import com.oriontech.assistant.service.EnterpriseAssistantService;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
@@ -16,6 +13,7 @@ import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
+import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +25,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class AiStacksConfig {
 
-    private final PostgresChatMemoryStore memoryStore;
+    private final ChatMemoryStore memoryStore;
     @Value("${app.pgvector.host}")
     private String pgHost;
     @Value("${app.pgvector.port}")
@@ -150,7 +148,7 @@ public class AiStacksConfig {
                 .minScore(minScore)
                 .build();
 
-        EnterpriseAssistantService assistant = AiServices.builder(EnterpriseAssistantService.class)
+        EnterpriseAssistant assistant = AiServices.builder(EnterpriseAssistant.class)
                 .chatModel(chat)
                 .streamingChatModel(streaming)
                 .contentRetriever(retriever)

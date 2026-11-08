@@ -1,6 +1,5 @@
-package com.oriontech.assistant.ai;
+package com.oriontech.assistant.runtime;
 
-import com.oriontech.assistant.service.EnterpriseAssistantService;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -15,5 +14,5 @@ public record AiStack(
         StreamingChatModel streamingChatModel,
         EmbeddingModel embeddingModel,
         EmbeddingStore<TextSegment> embeddingStore,
-        EnterpriseAssistantService assistant) {
+        EnterpriseAssistant assistant) {
 }

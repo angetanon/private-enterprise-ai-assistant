@@ -1,11 +1,16 @@
-package com.oriontech.assistant.controller;
+package com.oriontech.assistant.assistant;
 
-import com.oriontech.assistant.ai.AiStack;
 import com.oriontech.assistant.memory.PostgresChatMemoryStore;
+import com.oriontech.assistant.runtime.AiStack;
 import dev.langchain4j.model.output.TokenUsage;
 import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.content.ContentMetadata;
 import dev.langchain4j.service.Result;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,13 +25,12 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Tag(name = "Assistant", description = "Research chat into documents, by local model.")
 @RestController
 @RequestMapping("/api/{provider}")
 public class ChatController {
@@ -40,27 +44,40 @@ public class ChatController {
         this.memoryStore = memoryStore;
     }
 
+    @Operation(summary = "Ask a question (complete answer) to the chosen model with search in indexed documents.",
+            description = "Question chosen model with search in indexed documents.")
+    @ApiResponse(responseCode = "200", description = "Response, duration, tokens and sources")
+    @ApiResponse(responseCode = "404", description = "Unknown or disabled model", content = @io.swagger.v3.oas.annotations.media.Content)
+    @ApiResponse(responseCode = "500", description = "Internal server error", content = @io.swagger.v3.oas.annotations.media.Content)
     @PostMapping("/chat")
-    public Map<String, Object> chat(@PathVariable String provider,
-                                    @RequestParam(defaultValue = "default") String sessionId,
-                                    @RequestBody String message) {
+    public ChatResponse chat(
+            @Parameter(description = "Model provider", required = true,
+                    schema = @Schema(allowableValues = {"ollama", "mistral"}))
+            @PathVariable String provider,
+            @Parameter(description = "Conversation identifier (separate memory per model)")
+            @RequestParam(defaultValue = "default") String sessionId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Message to send to the model", required = true,
+            content = @io.swagger.v3.oas.annotations.media.Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
+            schema = @Schema(type = "string", example = "What is the leave policy ?")))
+            @RequestBody String message) {
         AiStack stack = stack(provider);
 
         long start = System.nanoTime();
         Result<String> result = stack.assistant().chat(sessionId, message);
         long durationMs = (System.nanoTime() - start) / 1_000_000;
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("provider", stack.name());
-        body.put("chatModel", stack.chatModelName());
-        body.put("embeddingModel", stack.embeddingModelName());
-        body.put("durationMs", durationMs);
-        body.put("tokens", tokens(result.tokenUsage()));
-        body.put("answer", result.content());
-        body.put("sources", sources(result.sources()));
-        return body;
+        return new ChatResponse(
+                stack.name(),
+                stack.chatModelName(),
+                stack.embeddingModelName(),
+                durationMs,
+                tokens(result.tokenUsage()),
+                result.content(),
+                sources(result.sources()));
     }
 
+    @Operation(summary = "Ask question (streaming SSE)",
+            description = "Event stream, one token per event, then a final event with 'complete' when the answer is complete.")
     @GetMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@PathVariable String provider,
                              @RequestParam(defaultValue = "default") String sessionId,
@@ -83,6 +100,7 @@ public class ChatController {
         return emitter;
     }
 
+    @Operation(summary = "Clear conversation memory for the chosen model")
     @DeleteMapping("/memory")
     public Map<String, String> clearMemory(@PathVariable String provider,
                                            @RequestParam String sessionId) {
@@ -97,31 +115,26 @@ public class ChatController {
         AiStack stack = stacks.get(provider);
         if (stack == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Fournisseur inconnu ou désactivé : " + provider + " (disponibles : " + stacks.keySet() + ")");
+                    "Unknown provider or disabled : " + provider + " (available : " + stacks.keySet() + ")");
         }
         return stack;
     }
 
-    private Map<String, Object> tokens(TokenUsage usage) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        if (usage != null) {
-            map.put("input", usage.inputTokenCount());
-            map.put("output", usage.outputTokenCount());
-            map.put("total", usage.totalTokenCount());
+    private ChatResponse.TokenUsageInfo tokens(TokenUsage usage) {
+        if (usage == null) {
+            return new ChatResponse.TokenUsageInfo(null, null, null);
         }
-        return map;
+        return new ChatResponse.TokenUsageInfo(
+                usage.inputTokenCount(), usage.outputTokenCount(), usage.totalTokenCount());
     }
 
-    private List<Map<String, Object>> sources(List<Content> contents) {
-        List<Map<String, Object>> list = new ArrayList<>();
-        for (Content c : contents) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("file", c.textSegment().metadata().getString("file_name"));
-            map.put("score", c.metadata().get(ContentMetadata.SCORE));
-            map.put("extract", abbreviate(c.textSegment().text(), 150));
-            list.add(map);
-        }
-        return list;
+    private List<ChatResponse.SourceInfo> sources(List<Content> contents) {
+        return contents.stream()
+                .map(c -> new ChatResponse.SourceInfo(
+                        c.textSegment().metadata().getString("file_name"),
+                        c.metadata().get(ContentMetadata.SCORE) instanceof Number n ? n.doubleValue() : null,
+                        abbreviate(c.textSegment().text(), 150)))
+                .toList();
     }
 
     private String abbreviate(String text, int max) {

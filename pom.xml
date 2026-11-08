@@ -44,6 +44,7 @@
 		</dependencies>
 	</dependencyManagement>
 
+	<!-- Spring Boot 4.1.2 is used in this project, which is compatible with Java 25. The project also uses LangChain4j version 1.16.3 and Lombok version 1.18.42. -->
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -74,7 +75,13 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>3.0.3</version>
+		</dependency>
 
+		<!-- LangChain4j dependencies -->
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j</artifactId>

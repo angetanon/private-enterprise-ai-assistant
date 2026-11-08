@@ -1,6 +1,6 @@
-package com.oriontech.assistant.service;
+package com.oriontech.assistant.rag;
 
-import com.oriontech.assistant.ai.AiStack;
+import com.oriontech.assistant.runtime.AiStack;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentParser;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;

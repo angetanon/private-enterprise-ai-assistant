@@ -1,6 +1,6 @@
-package com.oriontech.assistant.service;
+package com.oriontech.assistant.rag;
 
-import com.oriontech.assistant.ai.AiStack;
+import com.oriontech.assistant.runtime.AiStack;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;

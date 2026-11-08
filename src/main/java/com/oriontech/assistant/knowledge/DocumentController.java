@@ -1,6 +1,6 @@
-package com.oriontech.assistant.controller;
+package com.oriontech.assistant.knowledge;
 
-import com.oriontech.assistant.service.DocumentIngestionService;
+import com.oriontech.assistant.rag.DocumentIngestionService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

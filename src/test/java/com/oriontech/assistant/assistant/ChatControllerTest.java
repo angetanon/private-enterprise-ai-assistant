@@ -1,8 +1,8 @@
-package com.oriontech.assistant.controller;
+package com.oriontech.assistant.assistant;
 
-import com.oriontech.assistant.ai.AiStack;
+import com.oriontech.assistant.runtime.AiStack;
 import com.oriontech.assistant.memory.PostgresChatMemoryStore;
-import com.oriontech.assistant.service.EnterpriseAssistantService;
+import com.oriontech.assistant.runtime.EnterpriseAssistant;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.output.TokenUsage;
@@ -36,10 +36,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ChatControllerTest {
 
     @Mock
-    EnterpriseAssistantService ollamaAssistant;
+    EnterpriseAssistant ollamaAssistant;
 
     @Mock
-    EnterpriseAssistantService mistralAssistant;
+    EnterpriseAssistant mistralAssistant;
 
     @Mock
     PostgresChatMemoryStore memoryStore;
@@ -61,14 +61,14 @@ class ChatControllerTest {
         Result<String> result = resultOf("Bonjour !");
         when(ollamaAssistant.chat("s1", "Salut")).thenReturn(result);
 
-        Map<String, Object> body = controller.chat("ollama", "s1", "Salut");
+        ChatResponse body = controller.chat("ollama", "s1", "Salut");
 
         assertThat(body)
-                .containsEntry("provider", "ollama")
-                .containsEntry("chatModel", "llama3.2:3b")
-                .containsEntry("embeddingModel", "bge-m3")
-                .containsEntry("answer", "Bonjour !");
-        assertThat(body.get("durationMs")).isInstanceOf(Long.class);
+                .as("provider", "ollama")
+                .as("chatModel", "llama3.2:3b")
+                .as("embeddingModel", "bge-m3")
+                .as("answer", "Bonjour !");
+        assertThat(body.durationMs()).isInstanceOf(Long.class);
         verifyNoInteractions(mistralAssistant);
     }
 
@@ -77,9 +77,9 @@ class ChatControllerTest {
         Result<String> result = resultOf("Hello");
         when(mistralAssistant.chat("s1", "Salut")).thenReturn(result);
 
-        Map<String, Object> body = controller.chat("mistral", "s1", "Salut");
+        ChatResponse body = controller.chat("mistral", "s1", "Salut");
 
-        assertThat(body).containsEntry("provider", "mistral").containsEntry("answer", "Hello");
+        assertThat(body).as("provider", "mistral").as("answer", "Hello");
         verifyNoInteractions(ollamaAssistant);
     }
 
@@ -89,12 +89,17 @@ class ChatControllerTest {
         Result<String> result = resultOf("Bonjour !");
         when(ollamaAssistant.chat("s1", "Salut")).thenReturn(result);
 
-        Map<String, Object> body = controller.chat("ollama", "s1", "Salut");
+        ChatResponse body = controller.chat("ollama", "s1", "Salut");
 
-        assertThat((Map<String, Object>) body.get("tokens"))
+        assertThat(body.tokens().input().equals(10));
+        assertThat(body.tokens().output().equals(20));
+        assertThat(body.tokens().total().equals(30));
+        /*
+
+        assertThat(ChatResponse) body.tokens().input().equals("10");
                 .containsEntry("input", 10)
                 .containsEntry("output", 20)
-                .containsEntry("total", 30);
+                .containsEntry("total", 30);*/
     }
 
     @Test
@@ -108,12 +113,13 @@ class ChatControllerTest {
         Result<String> result = resultOf("25 jours", content);
         when(ollamaAssistant.chat("s1", "Combien de jours ?")).thenReturn(result);
 
-        Map<String, Object> body = controller.chat("ollama", "s1", "Combien de jours ?");
+        ChatResponse body = controller.chat("ollama", "s1", "Combien de jours ?");
 
-        List<Map<String, Object>> sources = (List<Map<String, Object>>) body.get("sources");
+        List<ChatResponse.SourceInfo> sources = body.sources();
         assertThat(sources).hasSize(1);
-        assertThat(sources.get(0)).containsEntry("file", "conges.pdf").containsEntry("score", 0.82);
-        assertThat((String) sources.get(0).get("extract")).hasSize(151).endsWith("…");
+        assertThat(sources.getFirst().extract()).hasSize(151).endsWith("…");
+        assertThat(sources.getFirst().score().equals(0.82));
+        assertThat(sources.getFirst().file().equals("conges.pdf"));
     }
 
     @Test
