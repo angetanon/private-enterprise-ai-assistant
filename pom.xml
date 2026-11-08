@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.orion-tech-consulting</groupId>
 	<artifactId>private-enterprise-ai-assistant</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<name/>
 	<description/>
 	<url/>
@@ -44,6 +44,7 @@
 		</dependencies>
 	</dependencyManagement>
 
+	<!-- Spring Boot 4.1.2 is used in this project, which is compatible with Java 25. The project also uses LangChain4j version 1.16.3 and Lombok version 1.18.42. -->
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -66,12 +67,28 @@
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
-			<groupId>dev.langchain4j</groupId>
-			<artifactId>langchain4j-ollama</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>3.0.3</version>
+		</dependency>
+
+		<!-- LangChain4j dependencies -->
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-ollama</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
@@ -82,9 +99,22 @@
 			<artifactId>langchain4j-document-parser-apache-tika</artifactId>
 		</dependency>
 
+		<!-- Test dependencies -->
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.tngtech.archunit</groupId>
+			<artifactId>archunit</artifactId>
+			<version>1.4.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

@@ -10,35 +10,70 @@ spring:
     url: jdbc:postgresql://localhost:5432/assistant
     username: assistant
     password: assistant
-  sql:
-      init:
-        mode: always
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
   servlet:
     multipart:
       max-file-size: 20MB
       max-request-size: 20MB
 
+springdoc:
+  paths-to-match: /api/**
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
 
-# Configuration of LLM and RAG
+
+# Configuration of AI providers and RAG system
 app:
+
+  # Configuration of the Ollama LLM server
   ollama:
     base-url: http://localhost:11434
-    model: llama3.2:3b # Specific model to use for inference, e.g., llama3.2:3b, llama3.2:7b, etc.
-    temperature: 0.3
-    timeout: 5m   # CPU inference is slow
+    chat-model: llama3.2:3b
+    embedding-model: bge-m3                     # Specific embedding model to use for Ollama (bge-m3 for Ollama)
+    embedding-dimensions: 1024                  # Number of dimensions for the embedding model (1024 for bge-m3)
+    embedding-table: embeddings_ollama_bge_m3
+    temperature: 0.1                            # Temperature for the LLM (0.0 to 1.0); 0 = deterministic, 1 = random
+    num-ctx: 4096                               # Number of tokens to use for context (4096 for llama3.2:3b)
+    min-score: 0.5                              # Minimum score for a result to be considered relevant (0.0 to 1.0)
+    timeout: 5m                                 # Timeout for the LLM (e.g., 5m for Ollama)
+
+  mistral: # Configuration of the Mistral LLM server
+    base-url: http://localhost:11434
+    chat-model: mistral-nemo:12b
+    embedding-model: bge-m3           # Specific embedding model to use for Mistral (bge-m3 for Mistral)
+    embedding-dimensions: 1024                  # Number of dimensions for the embedding model (1024 for bge-m3)
+    embedding-table: embeddings_mistral_bge_m3
+    temperature: 0.1                            # Temperature for the LLM (0.0 to 1.0); 0 = deterministic, 1 = random
+    num-ctx: 8192                              # Number of tokens to use for context (8192 for mistral-nemo:12b)
+    min-score: 0.5                              # Minimum score for a result to be considered relevant (0.0 to 1.0)
+    timeout: 5m                                 # Timeout for the LLM (e.g., 5m for Mistral)
+
+  # Configuration of the RAG (Retrieval-Augmented Generation) system
   rag:
-    embedding-model: nomic-embed-text # Specific embedding model to use for RAG, e.g., nomic-embed-text, openai-embedding-ada-002, etc.
-    chunk-size: 500 # Size of text chunks for indexing and searching (500 to 800)
-    chunk-overlap: 50 # Overlap of text chunks for indexing and searching (10% of chunk-size)
-    max-results: 3 # Maximum number of results to return for a RAG query
-    min-score: 0.5 # Minimum score for a result to be considered relevant (0.0 to 1.0)
-    numCtx: 4096 # Number of context tokens for the embedding model (4096 for nomic-embed-text)
+    chunk-size: 500                              # Size of text chunks for indexing and searching (500 to 800)
+    chunk-overlap: 50                            # Overlap of text chunks for indexing and searching (10% of chunk-size)
+    max-results: 6                               # Maximum number of results to return for a RAG query
+
+  # Configuration of the PostgreSQL database for RAG
   pgvector:
     host: localhost
     port: 5432
     database: assistant
     user: assistant
     password: assistant
+
+  # Configuration of the memory system
   memory:
     cleanup-enabled: true
     retention-days: 30

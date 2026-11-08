@@ -1,4 +1,4 @@
-package com.oriontech.assistant.service;
+package com.oriontech.assistant.memory;
 
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.ChatMessageDeserializer;
