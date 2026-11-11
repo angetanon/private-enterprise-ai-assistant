@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,22 +28,15 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Tag(name = "Assistant", description = "Research chat into documents, by local model.")
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/{provider}")
 public class ChatController {
 
-    private final Map<String, AiStack> stacks;
+    private final List<AiStack> stacks;
     private final PostgresChatMemoryStore memoryStore;
-
-    public ChatController(List<AiStack> stackList, PostgresChatMemoryStore memoryStore) {
-        this.stacks = stackList.stream()
-                .collect(Collectors.toMap(AiStack::name, Function.identity()));
-        this.memoryStore = memoryStore;
-    }
 
     @Operation(summary = "Ask a question (complete answer) to the chosen model with search in indexed documents.",
             description = "Question chosen model with search in indexed documents.")
@@ -112,10 +106,13 @@ public class ChatController {
     // ------------------------------------------------------------------ utils
 
     private AiStack stack(String provider) {
-        AiStack stack = stacks.get(provider);
+        AiStack stack = stacks.stream()
+                .filter(s -> s.name().equals(provider))
+                .findFirst()
+                .orElse(null);
         if (stack == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Unknown provider or disabled : " + provider + " (available : " + stacks.keySet() + ")");
+                    "Unknown provider or disabled : " + provider + " (available : " + stacks.stream().map(AiStack::name).toList() + ")");
         }
         return stack;
     }
