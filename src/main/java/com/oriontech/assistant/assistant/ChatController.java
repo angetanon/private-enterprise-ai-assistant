@@ -1,5 +1,6 @@
 package com.oriontech.assistant.assistant;
 
+import com.oriontech.assistant.identity.CurrentUserProvider;
 import com.oriontech.assistant.memory.PostgresChatMemoryStore;
 import com.oriontech.assistant.runtime.AiStack;
 import dev.langchain4j.model.output.TokenUsage;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,22 +29,19 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 @Tag(name = "Assistant", description = "Research chat into documents, by local model.")
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/{provider}")
 public class ChatController {
 
-    private final Map<String, AiStack> stacks;
-    private final PostgresChatMemoryStore memoryStore;
+    private static final Pattern CONVERSATION_ID = Pattern.compile("[A-Za-z0-9_-]{1,64}");
 
-    public ChatController(List<AiStack> stackList, PostgresChatMemoryStore memoryStore) {
-        this.stacks = stackList.stream()
-                .collect(Collectors.toMap(AiStack::name, Function.identity()));
-        this.memoryStore = memoryStore;
-    }
+    private final List<AiStack> stacks;
+    private final PostgresChatMemoryStore memoryStore;
+    private final CurrentUserProvider currentUser;
 
     @Operation(summary = "Ask a question (complete answer) to the chosen model with search in indexed documents.",
             description = "Question chosen model with search in indexed documents.")
@@ -55,15 +54,16 @@ public class ChatController {
                     schema = @Schema(allowableValues = {"ollama", "mistral"}))
             @PathVariable String provider,
             @Parameter(description = "Conversation identifier (separate memory per model)")
-            @RequestParam(defaultValue = "default") String sessionId,
+            @RequestParam(defaultValue = "default") String conversationId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Message to send to the model", required = true,
             content = @io.swagger.v3.oas.annotations.media.Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
             schema = @Schema(type = "string", example = "What is the leave policy ?")))
             @RequestBody String message) {
         AiStack stack = stack(provider);
+        String memoryId = memoryId(conversationId);
 
         long start = System.nanoTime();
-        Result<String> result = stack.assistant().chat(sessionId, message);
+        Result<String> result = stack.assistant().chat(memoryId, message);
         long durationMs = (System.nanoTime() - start) / 1_000_000;
 
         return new ChatResponse(
@@ -80,12 +80,13 @@ public class ChatController {
             description = "Event stream, one token per event, then a final event with 'complete' when the answer is complete.")
     @GetMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@PathVariable String provider,
-                             @RequestParam(defaultValue = "default") String sessionId,
+                             @RequestParam(defaultValue = "default") String conversationId,
                              @RequestParam String q) {
         AiStack stack = stack(provider);
         SseEmitter emitter = new SseEmitter(300_000L);
 
-        stack.assistant().stream(sessionId, q)
+        String memoryId = memoryId(conversationId);
+        stack.assistant().stream(memoryId, q)
                 .onPartialResponse(token -> {
                     try {
                         emitter.send(token);
@@ -103,19 +104,23 @@ public class ChatController {
     @Operation(summary = "Clear conversation memory for the chosen model")
     @DeleteMapping("/memory")
     public Map<String, String> clearMemory(@PathVariable String provider,
-                                           @RequestParam String sessionId) {
+                                           @RequestParam String conversationId) {
         AiStack stack = stack(provider);
-        memoryStore.deleteMessages(stack.name() + ":" + sessionId);
-        return Map.of("status", "cleared", "provider", stack.name(), "sessionId", sessionId);
+        String memoryId = memoryId(conversationId);
+        memoryStore.deleteMessages(stack.name() + ":" + memoryId);
+        return Map.of("status", "cleared", "provider", stack.name(), "conversationId", conversationId);
     }
 
     // ------------------------------------------------------------------ utils
 
     private AiStack stack(String provider) {
-        AiStack stack = stacks.get(provider);
+        AiStack stack = stacks.stream()
+                .filter(s -> s.name().equals(provider))
+                .findFirst()
+                .orElse(null);
         if (stack == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Unknown provider or disabled : " + provider + " (available : " + stacks.keySet() + ")");
+                    "Unknown provider or disabled : " + provider + " (available : " + stacks.stream().map(AiStack::name).toList() + ")");
         }
         return stack;
     }
@@ -139,5 +144,14 @@ public class ChatController {
 
     private String abbreviate(String text, int max) {
         return text.length() <= max ? text : text.substring(0, max) + "…";
+    }
+
+    /** Memory identity = user from the token + conversation chosen by the client. */
+    private String memoryId(String conversationId) {
+        if (!CONVERSATION_ID.matcher(conversationId).matches()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid conversationId (1 to 64 characters: letters, numbers, - and _)");
+        }
+        return currentUser.require().id() + ":" + conversationId;
     }
 }

@@ -1,5 +1,7 @@
 package com.oriontech.assistant.assistant;
 
+import com.oriontech.assistant.identity.CurrentUser;
+import com.oriontech.assistant.identity.CurrentUserProvider;
 import com.oriontech.assistant.runtime.AiStack;
 import com.oriontech.assistant.memory.PostgresChatMemoryStore;
 import com.oriontech.assistant.runtime.EnterpriseAssistant;
@@ -23,6 +25,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,13 +47,18 @@ class ChatControllerTest {
     @Mock
     PostgresChatMemoryStore memoryStore;
 
+    @Mock
+    CurrentUserProvider currentUser;
 
+    private static final String USER_ID = "user1";
     private ChatController controller;
     private MockMvc mvc;
 
     @BeforeEach
     void setUp() {
-        controller = new ChatController(List.of(ollamaStack(), mistralStack()), memoryStore);
+        lenient().when(currentUser.require())
+                .thenReturn(new CurrentUser(USER_ID, "alice", Set.of("user")));
+        controller = new ChatController(List.of(ollamaStack(), mistralStack()), memoryStore, currentUser);
         mvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -59,7 +67,7 @@ class ChatControllerTest {
     @Test
     void chat_routesToOllama_andBuildsResponse() {
         Result<String> result = resultOf("Bonjour !");
-        when(ollamaAssistant.chat("s1", "Salut")).thenReturn(result);
+        when(ollamaAssistant.chat(memoryId("s1"), "Salut")).thenReturn(result);
 
         ChatResponse body = controller.chat("ollama", "s1", "Salut");
 
@@ -75,7 +83,7 @@ class ChatControllerTest {
     @Test
     void chat_routesTomistral() {
         Result<String> result = resultOf("Hello");
-        when(mistralAssistant.chat("s1", "Salut")).thenReturn(result);
+        when(mistralAssistant.chat(memoryId("s1"), "Salut")).thenReturn(result);
 
         ChatResponse body = controller.chat("mistral", "s1", "Salut");
 
@@ -87,7 +95,7 @@ class ChatControllerTest {
     @SuppressWarnings("unchecked")
     void chat_exposesTokenUsage() {
         Result<String> result = resultOf("Bonjour !");
-        when(ollamaAssistant.chat("s1", "Salut")).thenReturn(result);
+        when(ollamaAssistant.chat(memoryId("s1"), "Salut")).thenReturn(result);
 
         ChatResponse body = controller.chat("ollama", "s1", "Salut");
 
@@ -111,7 +119,7 @@ class ChatControllerTest {
         when(content.metadata()).thenReturn(Map.of(ContentMetadata.SCORE, 0.82));
 
         Result<String> result = resultOf("25 jours", content);
-        when(ollamaAssistant.chat("s1", "Combien de jours ?")).thenReturn(result);
+        when(ollamaAssistant.chat(memoryId("s1"), "Combien de jours ?")).thenReturn(result);
 
         ChatResponse body = controller.chat("ollama", "s1", "Combien de jours ?");
 
@@ -135,14 +143,14 @@ class ChatControllerTest {
     void clearMemory_usesProviderPrefixedMemoryId() {
         Map<String, String> body = controller.clearMemory("mistral", "alice");
 
-        verify(memoryStore).deleteMessages("mistral:alice");
+        verify(memoryStore).deleteMessages("mistral:" + memoryId("alice")); // mistral:user1:alice
         assertThat(body).containsEntry("status", "cleared").containsEntry("provider", "mistral");
     }
 
     @Test
     void stream_registersHandlersAndStartsTokenStream() {
         TokenStream tokenStream = mock(TokenStream.class, RETURNS_SELF);
-        when(ollamaAssistant.stream("s1", "hello")).thenReturn(tokenStream);
+        when(ollamaAssistant.stream(memoryId("s1"), "hello")).thenReturn(tokenStream);
 
         SseEmitter emitter = controller.stream("ollama", "s1", "hello");
 
@@ -158,9 +166,9 @@ class ChatControllerTest {
     @Test
     void http_chat_returnsJson() throws Exception {
         Result<String> result = resultOf("Bonjour");
-        when(ollamaAssistant.chat("s1", "Salut")).thenReturn(result);
+        when(ollamaAssistant.chat(memoryId("s1"), "Salut")).thenReturn(result);
 
-        mvc.perform(post("/api/ollama/chat?sessionId=s1")
+        mvc.perform(post("/api/ollama/chat?conversationId=s1")
                         .contentType(MediaType.TEXT_PLAIN)
                         .content("Salut"))
                 .andExpect(status().isOk())
@@ -193,5 +201,14 @@ class ChatControllerTest {
         when(result.tokenUsage()).thenReturn(new TokenUsage(10, 20));
         when(result.sources()).thenReturn(List.of(sources));
         return result;
+    }
+
+    /**
+     * Returns the memory ID for a given conversation ID.
+     * @param conversationId
+     * @return
+     */
+    private static String memoryId(String conversationId) {
+        return USER_ID + ":" + conversationId;
     }
 }
