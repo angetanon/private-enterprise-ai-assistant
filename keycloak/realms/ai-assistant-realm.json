@@ -40,7 +40,8 @@
       ],
       "webOrigins": ["http://localhost:8080", "http://localhost:4200"],
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:8080/*##http://localhost:4200/*"
+PKCE        "post.logout.redirect.uris": "http://localhost:8080/*##http://localhost:4200/*",
+        "pkce.code.challenge.method": "S256"
       },
       "protocolMappers": [
         {
