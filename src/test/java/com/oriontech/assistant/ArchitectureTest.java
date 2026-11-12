@@ -94,6 +94,13 @@ class ArchitectureTest {
                 .check(classes);
     }
 
+    @Test
+    void spring_security_is_confined_to_identity() {
+        noClasses().that().resideOutsideOfPackage(BASE + ".identity..")
+                .should().dependOnClassesThat().resideInAnyPackage("org.springframework.security..")
+                .check(classes);
+    }
+
     // ------------------------------------------------------------------ utils
 
     private static void assertModuleDoesNotDependOn(String module, String... forbiddenModules) {
